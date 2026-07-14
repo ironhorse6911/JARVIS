@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jarvis-api
+  namespace: jarvis
+  labels:
+    app: jarvis
+    component: api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: jarvis
+      component: api
+  template:
+    metadata:
+      labels:
+        app: jarvis
+        component: api
+    spec:
+      serviceAccountName: jarvis
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+      - name: api
+        image: jarvis:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+        - name: metrics
+          containerPort: 9090
+        env:
+        - name: OLLAMA_HOST
+          value: "http://ollama:11434"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: jarvis-secrets
+              key: database-url
+        - name: REDIS_URL
+          value: "redis://redis:6379"
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: JARVIS_ENV
+          value: "production"
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+        - name: logs
+          mountPath: /var/log/jarvis
+      volumes:
+      - name: config
+        configMap:
+          name: jarvis-config
+      - name: logs
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jarvis-api
+  namespace: jarvis
+  labels:
+    app: jarvis
+    component: api
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+  selector:
+    app: jarvis
+    component: api
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: jarvis-api-hpa
+  namespace: jarvis
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: jarvis-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

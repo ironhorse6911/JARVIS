@@ -1,0 +1,59 @@
+# J.A.R.V.I.S. Model Generator Usage Guide
+
+## Quick Start Examples
+
+### Create Security-Focused Assistant
+```bash
+/home/jarvis-ai/create-model.sh guardian -p jarvis -s security -b ministral-3
+```
+
+### Create Coding Assistant
+```bash
+/home/jarvis-ai/create-model.sh codex -p coder -s coding -t 0.3
+```
+
+### Create Data Analyst
+```bash
+/home/jarvis-ai/create-model.sh insight -p analyst -s analysis
+```
+
+### Create Friday-style Assistant
+```bash
+/home/jarvis-ai/create-model.sh friday -p friday -s security
+```
+
+## Available Personas
+- **jarvis** - British wit, cybersecurity expert
+- **friday** - Southern accent, tactical specialist  
+- **coder** - Technical, programming-focused
+- **analyst** - Data-driven, statistical expert
+- **assistant** - Friendly, general-purpose helper
+
+## Available Specialties
+- **security** - Threat analysis, vulnerability assessment
+- **coding** - Software development, debugging, optimization
+- **analysis** - Data science, statistics, business intelligence
+- **general** - Task coordination, research, problem-solving
+
+## Base Models
+- **ministral-3** - Latest, efficient, well-balanced
+- **llama2-uncensored** - Larger, more creative
+- **llava** - Vision-capable, multimodal
+
+## Temperature Settings
+- **0.1-0.3** - Precise, technical responses
+- **0.4-0.7** - Balanced creativity and accuracy
+- **0.8-1.5** - More creative, varied responses
+
+## Generated Features
+Each model includes:
+- Custom Modelfile with persona and specialty
+- Quick launcher script (`launch.sh`)
+- Management interface (`manage.sh`)
+- Automatic model building with Ollama
+
+## Custom Personas
+Create your own persona file and use:
+```bash
+/home/jarvis-ai/create-model.sh mybot --custom my-persona.txt
+```

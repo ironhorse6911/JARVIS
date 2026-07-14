@@ -1,0 +1,27 @@
+[Unit]
+Description=JARVIS AI Assistant Service
+After=network.target
+
+[Service]
+Type=simple
+User=jarvis
+WorkingDirectory=/opt/jarvis
+ExecStart=/opt/jarvis/jarvis-launcher.sh
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/jarvis /var/log/jarvis
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=65536
+
+[Install]
+WantedBy=multi-user.target

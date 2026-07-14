@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jarvis
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jarvis-secrets
+  namespace: jarvis
+type: Opaque
+stringData:
+  database-url: "postgresql://jarvis:jarvis-secure-prod@postgres:5432/jarvis"
+  postgres-password: "jarvis-secure-prod"
+  redis-password: ""
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jarvis-config
+  namespace: jarvis
+data:
+  log_level: "INFO"
+  enable_gpu: "true"
+  max_concurrent_scans: "10"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jarvis
+  namespace: jarvis
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: jarvis
+  namespace: jarvis
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jarvis
+  namespace: jarvis
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: jarvis
+subjects:
+- kind: ServiceAccount
+  name: jarvis
+  namespace: jarvis
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ollama
+  namespace: jarvis
+spec:
+  serviceName: ollama
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 2
+          limits:
+            memory: 8Gi
+            cpu: 4
+        volumeMounts:
+        - name: models
+          mountPath: /root/.ollama
+  volumeClaimTemplates:
+  - metadata:
+      name: models
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: jarvis
+spec:
+  clusterIP: None
+  selector:
+    app: ollama
+  ports:
+  - port: 11434
+    targetPort: 11434
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: jarvis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: jarvis
+        - name: POSTGRES_USER
+          value: jarvis
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jarvis-secrets
+              key: postgres-password
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 500m
+          limits:
+            memory: 2Gi
+            cpu: 2
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: data
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: jarvis
+spec:
+  type: ClusterIP
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432

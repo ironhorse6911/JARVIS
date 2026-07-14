@@ -1,0 +1,34 @@
+.dockerignore
+# Version control
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.pytest_cache
+.coverage
+dist/
+build/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+
+# Documentation
+docs/
+*.md
+README*
+
+# Temporary
+*.log
+*.tmp
