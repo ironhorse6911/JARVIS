@@ -5,19 +5,17 @@
 
 version: 2
 updates:
-  - package-ecosystem: "python" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "python"
+    directory: "/"
     schedule:
       interval: "weekly"
-version: 2
-updates:
-  - package-ecosystem: "dockerfile" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  
+  - package-ecosystem: "dockerfile"
+    directory: "/"
     schedule:
       interval: "weekly"
-version: 2
-updates:
-  - package-ecosystem: "shell" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  
+  - package-ecosystem: "shell"
+    directory: "/"
     schedule:
       interval: "weekly"
